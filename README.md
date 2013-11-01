@@ -1,4 +1,8 @@
 
+## Demo
+
+http://showterm.io/c87a5df3ed8799444aef1#fast
+
 ## Requirements
 
 * ruby 1.9.3+
