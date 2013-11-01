@@ -1,0 +1,9 @@
+#!/bin/sh
+
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+STORY_ID=$(git config --get branch.$BRANCH.pivotal-story-id)
+
+if [[ -n $STORY_ID ]]; then
+	printf "0a\n\n\n[#$STORY_ID]\n.\nwq\n" | ed -s "$1"
+fi
+
