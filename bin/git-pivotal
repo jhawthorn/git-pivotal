@@ -1,0 +1,128 @@
+#!/usr/bin/env ruby
+
+require 'pivotal-tracker'
+
+def usage
+  print <<-EOS
+usage: git pivotal ls     # list available stories
+   or: git pivotal list   # list available stories (full format)
+   or: git pivotal show   # show the current story
+   or: git pivotal [start|restart|finish|deliver]
+EOS
+end
+
+def config
+  @config ||= Hash.new do |h,key|
+    h[key] = IO.popen(%W[git config --get #{key}]) do |io|
+      io.read.strip
+    end
+  end
+end
+
+def api_token
+  config['pivotal.api-token']
+end
+def project_id
+  config['pivotal.project-id']
+end
+def current_branch
+  @current_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
+end
+def current_story_id
+  config["branch.#{current_branch}.pivotal-story-id"]
+end
+
+def story_branches
+  @story_branches ||= Hash[`git config --get-regexp 'branch\..*\.pivotal-story-id$'`.split("\n").map do |line|
+    # FIXME: multiple branches with the same story_id?
+    m = /^branch\.(?<branch>.*)\.pivotal-story-id (?<story_id>\d+)$/.match(line)
+    [Integer(m[:story_id]), [m[:branch]]]
+  end]
+end
+
+def project
+  PivotalTracker::Client.token = api_token
+  PivotalTracker::Project.find(project_id)
+end
+def current_story
+  @current_story ||= project.stories.find(Integer(current_story_id)) unless current_story_id.empty?
+end
+
+def fmt_story story, format
+  branches = story_branches[story.id]
+  branch_str = "(#{branches.join(', ')})" if branches && branches.any?
+  case format
+  when :oneline
+    [story.id, branch_str, story.name].compact.join(' ')
+  when :full
+    attributes = {
+      'State:'     => story.current_state,
+      'Requester:' => story.requested_by,
+      'Owner:'     => story.owned_by,
+      'Date:'      => story.created_at
+    }.map do |(label, value)|
+      next unless value
+      "%-10s %s" % [label, value]
+    end.compact.join("\n")
+    body = if story.description.empty?
+             [story.name]
+           else
+             [story.name, ''] + story.description.split("\n")
+           end
+    <<EOS
+#{story.story_type} #{story.id} #{branch_str}
+#{attributes}
+
+    #{body.join("\n    ")}
+
+EOS
+  else
+    raise "unknown format #{format.inspect}"
+  end
+end
+
+def list format=:full
+  project.stories.all.each do |story|
+    puts fmt_story(story, format)
+  end
+end
+
+def current_story!
+  return current_story if current_story
+  puts "fatal: current branch doesn't have a story-id set"
+  exit 1
+end
+
+def show
+  puts fmt_story(current_story!, :full)
+end
+
+def set_state state
+  story = current_story!.update(current_state: state)
+  if story.errors.any?
+    puts "error: #{story.errors.first}"
+    exit 1
+  else
+    show
+  end
+end
+
+case ARGV.shift
+when 'ls'
+  list(:oneline)
+when 'list'
+  list(:full)
+when 'show'
+  show
+when 'start'
+  set_state('started')
+when 'restart'
+  set_state('started')
+when 'deliver'
+  set_state('delivered')
+when 'finish'
+  set_state('finished')
+else
+  usage
+end
+
