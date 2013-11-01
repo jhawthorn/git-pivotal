@@ -1,0 +1,17 @@
+#!/bin/sh
+
+usage(){
+	echo "usage: git start ID BRANCH" 1>&2
+	exit 1
+}
+
+STORY_ID=$1
+BRANCH=$2
+
+test -z $STORY_ID && usage
+test -z $BRANCH && usage
+
+set -ex
+git checkout -b "$BRANCH"
+git config --local "branch.$BRANCH.pivotal-story-id" "$STORY_ID"
+git pivotal start "$STORY_ID"
