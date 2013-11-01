@@ -82,7 +82,7 @@ EOS
 end
 
 def list format=:full
-  project.stories.all.each do |story|
+  project.stories.all(includedone: false).each do |story|
     puts fmt_story(story, format)
   end
 end
