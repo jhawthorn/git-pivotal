@@ -13,5 +13,5 @@ test -z $BRANCH && usage
 
 set -ex
 git checkout -b "$BRANCH"
-git config --local "branch.$BRANCH.pivotal-story-id" "$STORY_ID"
-git pivotal start "$STORY_ID"
+git pivotal set "$STORY_ID"
+git pivotal start
