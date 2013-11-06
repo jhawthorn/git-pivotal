@@ -4,19 +4,21 @@ require 'pivotal-tracker'
 
 def usage
   print <<-EOS
-usage: git pivotal ls            # list all available stories
-   or: git pivotal list          # list all available stories (full format)
-   or: git pivotal set STORY_ID  # set the story tracked by this branch
-   or: git pivotal show          # show the story tracked by this branch
+usage: git pivotal ls             # list all available stories
+   or: git pivotal list           # list all available stories (full format)
+   or: git pivotal set-story ID   # set the story tracked by this branch
+   or: git pivotal set-project ID # set the project tracked by this repository
+   or: git pivotal show           # show the story tracked by this branch
    or: git pivotal [start|restart|finish|deliver]
-                                 # set the state of the current story
+                                  # set the state of the current story
 EOS
 end
 
 def config
   @config ||= Hash.new do |h,key|
     h[key] = IO.popen(%W[git config --get #{key}]) do |io|
-      io.read.strip
+      s = io.read.strip
+      s.empty? ? nil : s
     end
   end
 end
@@ -109,13 +111,18 @@ def set_state state
   end
 end
 
+def set_project_id id
+    system *%W[git config --local pivotal.projcet-id #{id}]
+end
 def set_story_id id
     system *%W[git config --local branch.#{current_branch}.pivotal-story-id #{id}]
 end
 
 case ARGV.shift
-when 'set'
+when 'set-story'
   set_story_id(*ARGV)
+when 'set-project'
+  set_project_id(*ARGV)
 when 'ls'
   list(:oneline)
 when 'list'

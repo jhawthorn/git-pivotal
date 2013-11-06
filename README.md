@@ -32,16 +32,19 @@ by the git config setting `branch.<NAME>.pivotal-story-id`.
 
 ### git pivotal
 
-
-```
-usage: git pivotal ls     # list available stories
-   or: git pivotal list   # list available stories (full format)
-   or: git pivotal show   # show the current story
-   or: git pivotal [start|restart|finish|deliver]
-```
-
 `git-pivotal` supports listing and changing states of pivotal tracker stories
-based on the current branch.
+based on the current branch. It allows listing stories and changing their
+states.
+
+```
+usage: git pivotal ls             # list all available stories
+   or: git pivotal list           # list all available stories (full format)
+   or: git pivotal set-story ID   # set the story tracked by this branch
+   or: git pivotal set-project ID # set the project tracked by this repository
+   or: git pivotal show           # show the story tracked by this branch
+   or: git pivotal [start|restart|finish|deliver]
+                                  # set the state of the current story
+```
 
 ### hooks/prepare-commit-msg
 
@@ -57,7 +60,7 @@ your workflow. If you work differently, it's easy to replace.
 usage: git start STORY_ID NEW_BRANCH
 ```
 
-`git start` creates a new branch and sets its pivotal tracker story id. 
+`git start` creates a new branch and sets its pivotal tracker story id.
 
 ### Aliases
 
