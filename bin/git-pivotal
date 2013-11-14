@@ -112,7 +112,7 @@ def set_state state
 end
 
 def set_project_id id
-    system *%W[git config --local pivotal.projcet-id #{id}]
+    system *%W[git config --local pivotal.project-id #{id}]
 end
 def set_story_id id
     system *%W[git config --local branch.#{current_branch}.pivotal-story-id #{id}]
