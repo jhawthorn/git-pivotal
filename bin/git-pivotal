@@ -24,16 +24,32 @@ def config
 end
 
 def api_token
-  config['pivotal.api-token']
+  config['pivotal.api-token'] || abort(<<EOS)
+There is no pivotal tracker API token set.
+You can set one with:
+
+    git config --global pivotal.api-token <TOKEN>
+EOS
 end
 def project_id
-  config['pivotal.project-id']
+  config['pivotal.project-id'] || abort(<<EOS)
+This repository is not associated with a pivotal project.
+If you wish associate a project with this repo you can do so with:
+
+    git pivotal set-project <id>
+EOS
 end
 def current_branch
   @current_branch ||= `git rev-parse --abbrev-ref HEAD`.strip
 end
 def current_story_id
-  config["branch.#{current_branch}.pivotal-story-id"]
+  config["branch.#{current_branch}.pivotal-story-id"] || abort(<<EOS)
+There is no pivotal story set for the current branch.
+If you wish associate a story with this branch you can do so with:
+
+    git pivotal set-story <id>
+EOS
+
 end
 
 def story_branches
@@ -49,7 +65,7 @@ def project
   PivotalTracker::Project.find(project_id)
 end
 def current_story
-  @current_story ||= project.stories.find(Integer(current_story_id)) unless current_story_id.empty?
+  @current_story ||= project.stories.find(Integer(current_story_id))
 end
 
 def fmt_story story, format
@@ -91,18 +107,12 @@ def list format=:full
   end
 end
 
-def current_story!
-  return current_story if current_story
-  puts "fatal: current branch doesn't have a story-id set"
-  exit 1
-end
-
 def show
-  puts fmt_story(current_story!, :full)
+  puts fmt_story(current_story, :full)
 end
 
 def set_state state
-  story = current_story!.update(current_state: state)
+  story = current_story.update(current_state: state)
   if story.errors.any?
     puts "error: #{story.errors.first}"
     exit 1
